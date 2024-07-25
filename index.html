@@ -1,36 +1,169 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
     <meta charset="UTF-8"/>
-    <title>EFECT MATRIX JavaScript</title>
-    <style>
-        body {
-            background-color: black; /* Fond noir */
-            width: 100%; /* Largeur à 100% de l'écran */
-        }
-        #matrixText {
-            color: green; /* Texte en vert */
-            white-space: pre; /* Préserve les espaces et les sauts de ligne */
-        }
-    </style>
-    <script type="text/javascript">
-        function matrix() {
-            const characters = "dfqkfg,mqdfglkcb,lfblndflnvkjnvkhvbldfbljbdfnlknvlksaasdqsid";
-            const interval = setInterval(() => {
-                let line = '';
-                for (let i = 0; i < 60; i++) {
-                    line += characters.charAt(Math.floor(Math.random() * characters.length)) + ' ';
-                }
-                document.getElementById("matrixText").textContent += line + '\n'; // Ajoute un saut de ligne
-            }, 50); // Interval plus court (50 ms)
-            // Arrête la boucle après 5 secondes
-            setTimeout(() => clearInterval(interval), 5500);
-        }
-        matrix();
-    </script>
+    <link rel= "stylesheet" type= "text/css" href= "VOIXFICHIER3.css">
+
+    <title>Lire fichiers à voix haute</title> <!-- Titre de la page -->
+    <!-- Inclusion de pdf.js pour lire les fichiers PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
+    <!-- Inclusion de Tesseract.js pour l'OCR sur les images -->
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@2.1.1/dist/tesseract.min.js"></script>
 </head>
+
 <body>
-    <pre id="matrixText"></pre> <!-- Utilisez la balise <pre> pour préserver les espaces -->
+<center>
+    <h1>SELECTIONER VOTRE FICHIER A ECOUTER</h1>
+</center><br><br><br>   
+
+<section>
+<!-- Champ de fichier pour sélectionner différents types de fichiers -->
+<!--<label for="fileInput">Choisir un élément</label>-->
+
+<input type="file" id="fileInput" accept=".pdf, .png, .jpg, .jpeg, .txt, .html"/>
+<!-- Boutons pour contrôler la lecture -->
+<button onclick="readFile()">Lire le fichier</button><br><br><br>
+<button onclick="pauseReading()">Pause</button>
+<button onclick="resumeReading()">Reprendre</button>
+<button onclick="stopReading()">Arrêter</button>
+</section>
+
+
+<script type="text/javascript">
+    let synth;
+    let message;
+
+    // Fonction pour lire le fichier sélectionné
+    function readFile() {
+        const fileInput = document.getElementById('fileInput');
+        const file = fileInput.files[0];
+        if (file) {
+            const fileType = file.type;
+            // Vérifier le type de fichier et appeler la fonction appropriée
+            if (fileType === 'application/pdf') {
+                readPDF(file);
+            } else if (fileType.startsWith('image/')) {
+                readImage(file);
+            } else if (fileType === 'text/plain') {
+                readTextFile(file);
+            } else if (fileType === 'text/html') {
+                readHTMLFile(file);
+            } else {
+                console.error("Type de fichier non supporté.");
+            }
+        } else {
+            console.error("Aucun fichier sélectionné.");
+        }
+    }
+
+    // Fonction pour lire un fichier PDF
+    function readPDF(file) {
+        const reader = new FileReader();
+        reader.onload = function() {
+            const typedarray = new Uint8Array(this.result);
+            // Utiliser pdf.js pour lire le PDF
+            pdfjsLib.getDocument(typedarray).promise.then(function(pdf) {
+                pdf.getPage(1).then(function(page) {
+                    page.getTextContent().then(function(textContent) {
+                        const text = textContent.items.map(item => item.str).join(' ');
+                        speakText(text);
+                    });
+                });
+            });
+        };
+        reader.readAsArrayBuffer(file);
+    }
+
+    // Fonction pour lire une image
+    function readImage(file) {
+        Tesseract.recognize(
+            file,
+            'fra', // Langue de l'image
+            {
+                logger: m => console.log(m)
+            }
+        ).then(({ data: { text } }) => {
+            console.log(text);
+            speakText(text);
+        }).catch(err => {
+            console.error("Erreur lors de la reconnaissance de l'image : ", err);
+        });
+    }
+
+    // Fonction pour lire un fichier texte
+    function readTextFile(file) {
+        const reader = new FileReader();
+        reader.onload = function() {
+            const text = reader.result;
+            speakText(text);
+        };
+        reader.readAsText(file);
+    }
+
+    // Fonction pour lire un fichier HTML
+    function readHTMLFile(file) {
+        const reader = new FileReader();
+        reader.onload = function() {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(reader.result, 'text/html');
+            const text = doc.body.innerText;
+            speakText(text);
+        };
+        reader.readAsText(file);
+    }
+
+    // Fonction pour lire le texte à voix haute
+    function speakText(text) {
+        if ('speechSynthesis' in window) {
+            synth = window.speechSynthesis;
+            message = new SpeechSynthesisUtterance(text);
+
+            message.onstart = function(event) {
+                console.log("La lecture a commencé.");
+            };
+
+            message.onend = function(event) {
+                console.log("La lecture est terminée.");
+            };
+
+            message.onerror = function(event) {
+                console.error("Une erreur est survenue lors de la lecture.");
+            };
+
+            const voices = synth.getVoices();
+            message.voice = voices.find(voice => voice.lang === 'fr-FR') || voices[0];
+
+            synth.speak(message);
+        } else {
+            console.error("La synthèse vocale n'est pas supportée par ce navigateur.");
+        }
+    }
+
+    // Fonction pour mettre en pause la lecture
+    function pauseReading() {
+        if (synth && synth.speaking) {
+            synth.pause();
+            console.log("La lecture est en pause.");
+        }
+    }
+
+    // Fonction pour reprendre la lecture
+    function resumeReading() {
+        if (synth && synth.paused) {
+            synth.resume();
+            console.log("La lecture a repris.");
+        }
+    }
+
+    // Fonction pour arrêter la lecture
+    function stopReading() {
+        if (synth) {
+            synth.cancel();
+            console.log("La lecture est arrêtée.");
+        }
+    }
+</script>
+
 </body>
 </html>
 
