@@ -1,0 +1,52 @@
+body
+{
+background-color: beige;
+margin: 50px;
+padding: 30px;
+}
+
+
+h1
+{
+background-color: yellow;
+display: inline-flex; /*LE COLOR CE AJOUSTE AU TEXT inline-flex*/    
+/*DEGRADE REFLEC IMAGE*/ 
+-webkit-box-reflect:below 1px linear-gradient(transparent, #0005);
+box-shadow: 005px #03e9f4, 0015px #03e9f4, 0025px, #03e9f4, 00100px #03e9f4;
+}
+
+
+section
+{
+display: block;
+margin: auto;
+/*CENTRER UN BLOCK*/ 
+text-align: center;
+background-color: grey;	
+border-radius: 20px;
+width: 500px;
+height: 100px;
+}
+
+button
+{
+background-color: ;
+border-radius: 10px;	
+}
+
+input
+{
+background-color: #E1AD75;
+border-radius: 10px;	
+}
+
+
+
+
+
+
+
+
+
+
+
